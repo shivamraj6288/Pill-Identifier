@@ -25,6 +25,17 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         android:id="@+id/progressbar"/>
+    <ProgressBar
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:id="@+id/uploadBar"
+        app:layout_constraintTop_toBottomOf="@id/takenimage"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:layout_marginBottom="50dp"
+        android:visibility="gone"/>
+
     <androidx.cardview.widget.CardView
         android:layout_width="60dp"
         android:layout_height="60dp"
