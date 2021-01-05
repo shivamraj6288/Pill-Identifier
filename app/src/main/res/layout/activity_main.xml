@@ -16,6 +16,26 @@
         android:layout_marginTop="5dp"
         android:layout_marginBottom="50dp"
         android:visibility="invisible"/>
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:id="@+id/correct"
+        android:src="@mipmap/correct_foreground"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/rescan"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="50dp"
+        android:visibility="invisible"/>
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:id="@+id/wrong"
+        android:src="@mipmap/wrong_foreground"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/rescan"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="50dp"
+        android:visibility="invisible"/>
     <ProgressBar
         android:layout_width="100dp"
         android:layout_height="100dp"

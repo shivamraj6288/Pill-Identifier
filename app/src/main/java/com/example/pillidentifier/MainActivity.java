@@ -28,6 +28,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
@@ -43,7 +44,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
-    public ImageView imageView;
+    public ImageView imageView,correct,wrong;
     public CardView cardView;
     public ProgressBar progressBar, uploadProgressBar;
     public static final String TAG="MainActivity";
@@ -55,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
     public String imageCode;
     public static String URL="http://54.165.240.234:8000/uploadimage/";
     public String picturePath;
+    int nlabel;
 //    byte[] ba;
 
     @Override
@@ -66,38 +68,17 @@ public class MainActivity extends AppCompatActivity {
         cardView.setOnClickListener(v -> {
             imageView.setVisibility(View.INVISIBLE);
             progressBar.setVisibility(View.VISIBLE);
-            takePicture();
+            correct.setVisibility(View.INVISIBLE);
+            wrong.setVisibility(View.INVISIBLE);
+//            takePicture();
+            dispatchTakePictureIntent();
         });
 
 
-        takePicture();
+//        takePicture();
+        dispatchTakePictureIntent();
     }
-    private void upload(){
-        Log.e("path","-----------"+picturePath);
 
-        ByteArrayOutputStream byteArrayOutputStream=new ByteArrayOutputStream();
-        imageBitmap.compress(Bitmap.CompressFormat.JPEG,90,byteArrayOutputStream);
-        byte[] ba=byteArrayOutputStream.toByteArray();
-        imageCode =Base64.encodeToString(ba,Base64.NO_WRAP);
-
-        Log.e("base64", "------"+ imageCode);
-
-
-
-        try {
-            byteArrayOutputStream.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
-            byteArrayOutputStream.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        new uploadToServer().execute();
-
-
-    }
     private void upload2(){
         InputStream inputStream = null; // You can get an inputStream using any I/O API
         try {
@@ -129,15 +110,22 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
-//        photoFile.delete();
+        photoFile.delete();
+        new uploadToServer().execute();
+    }
+    private void upload3(Bitmap bitmap){
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
+        byte[] byteArray = byteArrayOutputStream .toByteArray();
+        imageCode= Base64.encodeToString(byteArray, Base64.DEFAULT);
         new uploadToServer().execute();
     }
 
-    private File createImageFile2() throws IOException {
+    private File createImageFile2(String result) throws IOException {
         // Create an image file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd").format(new Date());
 //        String timeStamp="111";
-        String imageFileName = "JPEG_" + timeStamp +"_";
+        String imageFileName = result+"_" + timeStamp +"_";
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         File image = File.createTempFile(
                 imageFileName,  /* prefix */
@@ -149,11 +137,49 @@ public class MainActivity extends AppCompatActivity {
         picturePath = image.getAbsolutePath();
         return image;
     }
+
+    private boolean saveImage(Bitmap bitmap, int countLabel){
+        FileOutputStream fileOutputStream=null;
+        File currentImage=null;
+        if (countLabel>0){
+            try {
+                currentImage=createImageFile2("YES");
+            } catch (IOException e) {
+                Toast.makeText(MainActivity.this,e.getMessage(),Toast.LENGTH_LONG).show();
+                e.printStackTrace();
+                return false;
+            }
+        }
+        else {
+            try {
+                currentImage = createImageFile2("NOO");
+            } catch (IOException e) {
+                Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                e.printStackTrace();
+                return false;
+            }
+        }
+            try {
+                fileOutputStream = new FileOutputStream(currentImage);
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
+                fileOutputStream.close();
+                return true;
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return false;
+
+    }
     private void setViews(){
         imageView=findViewById(R.id.takenimage);
         cardView=findViewById(R.id.rescan);
         progressBar=findViewById(R.id.progressbar);
         uploadProgressBar=findViewById(R.id.uploadBar);
+        correct=findViewById(R.id.correct);
+        wrong=findViewById(R.id.wrong);
     }
 
     private void takePicture(){
@@ -164,7 +190,7 @@ public class MainActivity extends AppCompatActivity {
             if(takePictureIntent.resolveActivity(getPackageManager())!=null){
                 photoFile=null;
                 try{
-                    photoFile=createImageFile2();
+                    photoFile=createImageFile2("jaja");
                 }
                 catch (IOException e){
                     Log.e(TAG+" image",e.getMessage());
@@ -189,6 +215,17 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, e.getMessage());
         }
     }
+    private void dispatchTakePictureIntent() {
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        try {
+            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+        } catch (ActivityNotFoundException e) {
+            // display error state to the user
+            Toast.makeText(MainActivity.this,"Image Capture Failed",Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
+            Log.d(TAG, e.getMessage());
+        }
+    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -196,11 +233,15 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK ) {
 
+            Bundle extras=data.getExtras();
+            imageBitmap=(Bitmap) extras.get("data");
             setPic2();
+            nlabel=0;
             imageView.setVisibility(View.VISIBLE);
             progressBar.setVisibility(View.INVISIBLE);
+
             Toast.makeText(MainActivity.this,"Image ok",Toast.LENGTH_SHORT).show();
-            upload2();
+            upload3(imageBitmap);
 
 
         }
@@ -211,8 +252,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setPic2() {
-        imageBitmap= BitmapFactory.decodeFile(picturePath);
+//        imageBitmap= BitmapFactory.decodeFile(picturePath);
 //        photoFile.delete();
+
         imageView.setImageBitmap(imageBitmap);
 
     }
@@ -221,7 +263,7 @@ public class MainActivity extends AppCompatActivity {
 
         protected void onPreExecute(){
             super.onPreExecute();
-            cardView.setVisibility(View.GONE);
+            cardView.setVisibility(View.INVISIBLE);
             uploadProgressBar.setVisibility(View.VISIBLE);
         }
         @Override
@@ -245,7 +287,7 @@ public class MainActivity extends AppCompatActivity {
                         public void run() {
                             Toast.makeText(MainActivity.this,e.getMessage(),Toast.LENGTH_LONG).show();
                             Log.d(TAG+" upload", e.getMessage());
-                            uploadProgressBar.setVisibility(View.GONE);
+                            uploadProgressBar.setVisibility(View.INVISIBLE);
                             cardView.setVisibility(View.VISIBLE);
                         }
                     });
@@ -264,14 +306,22 @@ public class MainActivity extends AppCompatActivity {
                                     String result=jsonObject.getString("result");
                                     if (result.isEmpty() || !result.equals("success")){
                                         Toast.makeText(MainActivity.this,responseList,Toast.LENGTH_LONG).show();
-                                        uploadProgressBar.setVisibility(View.GONE);
+                                        uploadProgressBar.setVisibility(View.INVISIBLE);
                                         cardView.setVisibility(View.VISIBLE);
                                     }
                                     else {
-                                        Toast.makeText(MainActivity.this,"balle balle",Toast.LENGTH_LONG).show();
+                                        Toast.makeText(MainActivity.this,"Image Analysis Completed",Toast.LENGTH_LONG).show();
                                         rs[0] ="success";
-                                        uploadProgressBar.setVisibility(View.GONE);
+                                        nlabel=jsonObject.getInt("nlabel");
+                                        uploadProgressBar.setVisibility(View.INVISIBLE);
                                         cardView.setVisibility(View.VISIBLE);
+                                        if(nlabel>0){
+                                            correct.setVisibility(View.VISIBLE);
+                                        }
+                                        else{
+                                            wrong.setVisibility(View.VISIBLE);
+                                        }
+                                        saveImage(imageBitmap,nlabel);
 
                                     }
 
@@ -281,7 +331,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                             catch (Exception e){
                                 Toast.makeText(MainActivity.this,e.getMessage(),Toast.LENGTH_LONG).show();
-                                uploadProgressBar.setVisibility(View.GONE);
+                                uploadProgressBar.setVisibility(View.INVISIBLE);
                                 cardView.setVisibility(View.VISIBLE);
                             }
                         }
@@ -297,8 +347,10 @@ public class MainActivity extends AppCompatActivity {
             MainActivity.this.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    uploadProgressBar.setVisibility(View.GONE);
-                    cardView.setVisibility(View.VISIBLE);
+//                    uploadProgressBar.setVisibility(View.INVISIBLE);
+//                    cardView.setVisibility(View.VISIBLE);
+
+
                 }
             });
 
