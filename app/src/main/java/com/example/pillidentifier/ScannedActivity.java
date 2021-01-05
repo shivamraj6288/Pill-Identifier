@@ -11,27 +11,33 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.Toast;
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 
 public class ScannedActivity extends AppCompatActivity {
 
-    public CardView scanCard;
     private RecyclerView imageRecycler;
     public ArrayList<Bitmap> imageList;
     public ArrayList<Boolean> analysisList;
     private ImageAdapter imageAdapter;
+    private ImageView noImage;
+    private FloatingActionButton fab;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scanned);
         setViews();
-        scanCard.setOnClickListener(new View.OnClickListener() {
+        fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent scanIntent=new Intent(ScannedActivity.this, MainActivity.class);
@@ -42,8 +48,9 @@ public class ScannedActivity extends AppCompatActivity {
         setRecyclerViewContent();
     }
     private void setViews(){
-        scanCard=findViewById(R.id.goToScan);
         imageRecycler=findViewById(R.id.scannedImagesRecycler);
+        noImage=findViewById(R.id.noImage);
+        fab=findViewById(R.id.fab);
 
     }
 
@@ -51,6 +58,15 @@ public class ScannedActivity extends AppCompatActivity {
         imageRecycler.setLayoutManager(new GridLayoutManager(this,2));
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         File[] images=storageDir.listFiles();
+        if(images!=null){
+            Arrays.sort(images, new Comparator<File>() {
+                @Override
+                public int compare(File o1, File o2) {
+                    return Long.compare(o2.lastModified(), o1.lastModified());
+
+                }
+            });
+        }
         if(imageList!=null){
             imageList.clear();
         }
@@ -62,7 +78,7 @@ public class ScannedActivity extends AppCompatActivity {
 
         for (int i=0; i<images.length; i++){
             String name=images[i].getName();
-            String check=name.substring(0,3);
+            String check=name.substring(16,19);
             try {
 
                 if (check.equals("YES")) {
@@ -76,6 +92,12 @@ public class ScannedActivity extends AppCompatActivity {
             catch(FileNotFoundException e){
                 e.printStackTrace();
             }
+        }
+        if(analysisList.size()==0){
+            noImage.setVisibility(View.VISIBLE);
+        }
+        else{
+            noImage.setVisibility(View.INVISIBLE);
         }
         imageAdapter=new ImageAdapter(imageList,analysisList,this);
         imageRecycler.setAdapter(imageAdapter);

@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Pill Identifier</string>
+    <string name="scan">SCAN</string>
+    <string name="extended_fab_content_desc">Scan New Image</string>
 </resources>

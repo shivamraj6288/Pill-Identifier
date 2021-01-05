@@ -45,7 +45,7 @@ import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
     public ImageView imageView,correct,wrong;
-    public CardView cardView;
+    public CardView cardView, goToScanned;
     public ProgressBar progressBar, uploadProgressBar;
     public static final String TAG="MainActivity";
     public static final int REQUEST_IMAGE_CAPTURE=1;
@@ -77,6 +77,14 @@ public class MainActivity extends AppCompatActivity {
 
 //        takePicture();
         dispatchTakePictureIntent();
+        goToScanned.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent=new Intent(MainActivity.this,ScannedActivity.class);
+                startActivity(intent);
+                finish();
+            }
+        });
     }
 
     private void upload2(){
@@ -123,9 +131,10 @@ public class MainActivity extends AppCompatActivity {
 
     private File createImageFile2(String result) throws IOException {
         // Create an image file name
-        String timeStamp = new SimpleDateFormat("yyyyMMdd").format(new Date());
+//        String timeStamp = new SimpleDateFormat("yyyyMMdd").format(new Date());
 //        String timeStamp="111";
-        String imageFileName = result+"_" + timeStamp +"_";
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = timeStamp +"_"+result+"_";
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         File image = File.createTempFile(
                 imageFileName,  /* prefix */
@@ -180,6 +189,7 @@ public class MainActivity extends AppCompatActivity {
         uploadProgressBar=findViewById(R.id.uploadBar);
         correct=findViewById(R.id.correct);
         wrong=findViewById(R.id.wrong);
+        goToScanned=findViewById(R.id.goToScanned);
     }
 
     private void takePicture(){
@@ -240,7 +250,7 @@ public class MainActivity extends AppCompatActivity {
             imageView.setVisibility(View.VISIBLE);
             progressBar.setVisibility(View.INVISIBLE);
 
-            Toast.makeText(MainActivity.this,"Image ok",Toast.LENGTH_SHORT).show();
+//            Toast.makeText(MainActivity.this,"Image ok",Toast.LENGTH_SHORT).show();
             upload3(imageBitmap);
 
 
@@ -264,6 +274,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onPreExecute(){
             super.onPreExecute();
             cardView.setVisibility(View.INVISIBLE);
+            goToScanned.setVisibility(View.INVISIBLE);
             uploadProgressBar.setVisibility(View.VISIBLE);
         }
         @Override
@@ -289,6 +300,7 @@ public class MainActivity extends AppCompatActivity {
                             Log.d(TAG+" upload", e.getMessage());
                             uploadProgressBar.setVisibility(View.INVISIBLE);
                             cardView.setVisibility(View.VISIBLE);
+                            goToScanned.setVisibility(View.VISIBLE);
                         }
                     });
                 }
@@ -308,13 +320,15 @@ public class MainActivity extends AppCompatActivity {
                                         Toast.makeText(MainActivity.this,responseList,Toast.LENGTH_LONG).show();
                                         uploadProgressBar.setVisibility(View.INVISIBLE);
                                         cardView.setVisibility(View.VISIBLE);
+                                        goToScanned.setVisibility(View.VISIBLE);
                                     }
                                     else {
-                                        Toast.makeText(MainActivity.this,"Image Analysis Completed",Toast.LENGTH_LONG).show();
+                                        Toast.makeText(MainActivity.this,"Image Analysis Completed",Toast.LENGTH_SHORT).show();
                                         rs[0] ="success";
                                         nlabel=jsonObject.getInt("nlabel");
                                         uploadProgressBar.setVisibility(View.INVISIBLE);
                                         cardView.setVisibility(View.VISIBLE);
+                                        goToScanned.setVisibility(View.VISIBLE);
                                         if(nlabel>0){
                                             correct.setVisibility(View.VISIBLE);
                                         }
@@ -333,6 +347,7 @@ public class MainActivity extends AppCompatActivity {
                                 Toast.makeText(MainActivity.this,e.getMessage(),Toast.LENGTH_LONG).show();
                                 uploadProgressBar.setVisibility(View.INVISIBLE);
                                 cardView.setVisibility(View.VISIBLE);
+                                goToScanned.setVisibility(View.VISIBLE);
                             }
                         }
                     });
