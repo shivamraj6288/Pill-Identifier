@@ -17,14 +17,15 @@
         android:layout_marginBottom="50dp"
         android:visibility="invisible"/>
     <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
         android:id="@+id/correct"
         android:src="@mipmap/correct_foreground"
-        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@+id/rescan"
+        app:layout_constraintRight_toRightOf="parent"
         android:layout_marginTop="5dp"
         android:layout_marginBottom="50dp"
+        android:scaleType="centerCrop"
         android:visibility="invisible"/>
     <ImageView
         android:layout_width="match_parent"
@@ -45,16 +46,16 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         android:id="@+id/progressbar"/>
-    <ProgressBar
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        android:id="@+id/uploadBar"
-        app:layout_constraintTop_toBottomOf="@id/takenimage"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        android:layout_marginBottom="50dp"
-        android:visibility="gone"/>
+<!--    <ProgressBar-->
+<!--        android:layout_width="60dp"-->
+<!--        android:layout_height="60dp"-->
+<!--        android:id="@+id/uploadBar"-->
+<!--        app:layout_constraintTop_toBottomOf="@id/takenimage"-->
+<!--        app:layout_constraintBottom_toBottomOf="parent"-->
+<!--        app:layout_constraintRight_toRightOf="parent"-->
+<!--        app:layout_constraintLeft_toLeftOf="parent"-->
+<!--        android:layout_marginBottom="50dp"-->
+<!--        android:visibility="gone"/>-->
 
     <androidx.cardview.widget.CardView
         android:layout_width="60dp"

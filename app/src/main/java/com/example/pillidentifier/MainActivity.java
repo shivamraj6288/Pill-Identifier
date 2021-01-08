@@ -8,7 +8,12 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.RectF;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -22,6 +27,7 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
@@ -32,6 +38,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
@@ -46,10 +53,11 @@ import okhttp3.Response;
 public class MainActivity extends AppCompatActivity {
     public ImageView imageView,correct,wrong;
     public CardView cardView, goToScanned;
-    public ProgressBar progressBar, uploadProgressBar;
+    public ProgressBar progressBar;//, uploadProgressBar;
     public static final String TAG="MainActivity";
     public static final int REQUEST_IMAGE_CAPTURE=1;
     public Bitmap imageBitmap;
+    public String receivedB64;
 
     public File photoFile;
 
@@ -186,7 +194,7 @@ public class MainActivity extends AppCompatActivity {
         imageView=findViewById(R.id.takenimage);
         cardView=findViewById(R.id.rescan);
         progressBar=findViewById(R.id.progressbar);
-        uploadProgressBar=findViewById(R.id.uploadBar);
+//        uploadProgressBar=findViewById(R.id.uploadBar);
         correct=findViewById(R.id.correct);
         wrong=findViewById(R.id.wrong);
         goToScanned=findViewById(R.id.goToScanned);
@@ -245,10 +253,10 @@ public class MainActivity extends AppCompatActivity {
 
             Bundle extras=data.getExtras();
             imageBitmap=(Bitmap) extras.get("data");
-            setPic2();
+//            setPic2();
             nlabel=0;
-            imageView.setVisibility(View.VISIBLE);
-            progressBar.setVisibility(View.INVISIBLE);
+//            imageView.setVisibility(View.VISIBLE);
+//            progressBar.setVisibility(View.INVISIBLE);
 
 //            Toast.makeText(MainActivity.this,"Image ok",Toast.LENGTH_SHORT).show();
             upload3(imageBitmap);
@@ -275,7 +283,7 @@ public class MainActivity extends AppCompatActivity {
             super.onPreExecute();
             cardView.setVisibility(View.INVISIBLE);
             goToScanned.setVisibility(View.INVISIBLE);
-            uploadProgressBar.setVisibility(View.VISIBLE);
+//            uploadProgressBar.setVisibility(View.VISIBLE);
         }
         @Override
         protected String doInBackground(Void... voids) {
@@ -298,7 +306,7 @@ public class MainActivity extends AppCompatActivity {
                         public void run() {
                             Toast.makeText(MainActivity.this,e.getMessage(),Toast.LENGTH_LONG).show();
                             Log.d(TAG+" upload", e.getMessage());
-                            uploadProgressBar.setVisibility(View.INVISIBLE);
+//                            uploadProgressBar.setVisibility(View.INVISIBLE);
                             cardView.setVisibility(View.VISIBLE);
                             goToScanned.setVisibility(View.VISIBLE);
                         }
@@ -311,22 +319,65 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             try{
+                                String checkResult;
+                                if (response.isSuccessful()){
+                                    checkResult="true";
+                                }
+                                else {
+                                    checkResult="false";
+                                }
+                                Log.e(TAG,"response : "+checkResult);
                                 if(response.isSuccessful()){
+
                                     final String responseList=response.body().string();
+                                    Log.e(TAG, "check---"+responseList);
                                     JSONObject jsonObject=new JSONObject(responseList);
+
 
                                     String result=jsonObject.getString("result");
                                     if (result.isEmpty() || !result.equals("success")){
-                                        Toast.makeText(MainActivity.this,responseList,Toast.LENGTH_LONG).show();
-                                        uploadProgressBar.setVisibility(View.INVISIBLE);
+                                        Toast.makeText(MainActivity.this,"data is in wrong format",Toast.LENGTH_LONG).show();
+//                                        uploadProgressBar.setVisibility(View.INVISIBLE);
                                         cardView.setVisibility(View.VISIBLE);
                                         goToScanned.setVisibility(View.VISIBLE);
+                                        imageView.setVisibility(View.VISIBLE);
+                                        progressBar.setVisibility(View.INVISIBLE);
+
                                     }
                                     else {
                                         Toast.makeText(MainActivity.this,"Image Analysis Completed",Toast.LENGTH_SHORT).show();
                                         rs[0] ="success";
                                         nlabel=jsonObject.getInt("nlabel");
-                                        uploadProgressBar.setVisibility(View.INVISIBLE);
+//                                        receivedB64=jsonObject.getString("b64code");
+//                                        Log.e(TAG,receivedB64);
+//                                        byte[] decodedString=Base64.decode(receivedB64,Base64.DEFAULT);
+//                                        imageBitmap=BitmapFactory.decodeByteArray(decodedString,0, decodedString.length);
+                                        JSONArray cords=jsonObject.getJSONArray("cord");
+                                        Paint myRectPaint=new Paint();
+                                        myRectPaint.setColor(Color.rgb(255,0,50));
+                                        Bitmap tempBitmap=Bitmap.createBitmap(imageBitmap.getWidth(),imageBitmap.getHeight(),Bitmap.Config.RGB_565);
+                                        Canvas tempCanvas=new Canvas(tempBitmap);
+                                        tempCanvas.drawBitmap(imageBitmap,0,0,null);
+                                        for (int i=0; i<cords.length(); i=i+4){
+                                            float x1=(float)(imageBitmap.getWidth()*cords.getDouble(i));
+                                            float y1=(float)(imageBitmap.getHeight()*cords.getDouble(i+1));
+                                            float x2=(float)(imageBitmap.getWidth()*cords.getDouble(i+2));
+                                            float y2=(float)(imageBitmap.getHeight()*cords.getDouble(i+3));
+//                                            tempCanvas.drawRoundRect(new RectF(x1,y1,x2,y2),2,2,myRectPaint);
+                                            tempCanvas.drawLine(x1,y1,x1+x2,y1,myRectPaint);
+                                            tempCanvas.drawLine(x1+x2,y1,x1+x2,y1+y2,myRectPaint);
+                                            tempCanvas.drawLine(x1+x2,y1+y2,x1,y1+y2,myRectPaint);
+                                            tempCanvas.drawLine(x1,y1+y2,x1,y1,myRectPaint);
+//                                            tempCanvas.drawRect(new RectF(x1,y1,x2,y2),myRectPaint);
+//                                            tempCanvas.drawRect(x1,y1,x2,y2,myRectPaint);
+                                            Log.e(TAG,"check cord---"+String.valueOf(x1)+" "+String.valueOf(y1)+" "+String.valueOf(x2)+" "+String.valueOf(y2));
+//                                            break;
+                                        }
+//                                        setPic2();
+                                        imageView.setImageDrawable(new BitmapDrawable(getResources(),tempBitmap));
+                                        imageView.setVisibility(View.VISIBLE);
+                                        progressBar.setVisibility(View.INVISIBLE);
+//                                        uploadProgressBar.setVisibility(View.INVISIBLE);
                                         cardView.setVisibility(View.VISIBLE);
                                         goToScanned.setVisibility(View.VISIBLE);
                                         if(nlabel>0){
@@ -335,7 +386,7 @@ public class MainActivity extends AppCompatActivity {
                                         else{
                                             wrong.setVisibility(View.VISIBLE);
                                         }
-                                        saveImage(imageBitmap,nlabel);
+                                        saveImage(tempBitmap,nlabel);
 
                                     }
 
@@ -344,8 +395,10 @@ public class MainActivity extends AppCompatActivity {
                                 }
                             }
                             catch (Exception e){
-                                Toast.makeText(MainActivity.this,e.getMessage(),Toast.LENGTH_LONG).show();
-                                uploadProgressBar.setVisibility(View.INVISIBLE);
+                                Toast.makeText(MainActivity.this,e.getMessage() + " on Response Catch Error",Toast.LENGTH_LONG).show();
+                                imageView.setVisibility(View.VISIBLE);
+                                progressBar.setVisibility(View.INVISIBLE);
+//                                uploadProgressBar.setVisibility(View.INVISIBLE);
                                 cardView.setVisibility(View.VISIBLE);
                                 goToScanned.setVisibility(View.VISIBLE);
                             }
